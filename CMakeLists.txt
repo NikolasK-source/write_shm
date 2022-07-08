@@ -138,6 +138,7 @@ function(clangwarn)
     target_compile_options(${Target} PUBLIC -Wno-error=unused-exception-parameter)
     target_compile_options(${Target} PUBLIC -Wno-nested-anon-types)
     target_compile_options(${Target} PUBLIC -Wno-gnu-anonymous-struct)
+    target_compile_options(${Target} PUBLIC -Wno-reserved-id-macro)
 
 endfunction()
 
