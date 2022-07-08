@@ -16,8 +16,12 @@ int main(int argc, char **argv) {
     };
 
     options.add_options()("n,name", "shared memory name (mandatory)", cxxopts::value<std::string>());
+    options.add_options()("i,invert", "invert all input bits", cxxopts::value<bool>()->default_value("false"));
     options.add_options()("r,repeat",
                           "repeat input if input size is smaller than shared memory",
+                          cxxopts::value<bool>()->default_value("false"));
+    options.add_options()("p,passthrough",
+                          "output everything that is written to the shared memory to stdout",
                           cxxopts::value<bool>()->default_value("false"));
     options.add_options()("h,help", "print usage");
 
@@ -31,6 +35,7 @@ int main(int argc, char **argv) {
     }
 
     const auto REPEAT_INPUT = args["repeat"].as<bool>();
+    const auto PASSTHROUGH  = args["passthrough"].as<bool>();
 
     // print usage
     if (args.count("help")) {
@@ -84,15 +89,23 @@ int main(int argc, char **argv) {
 
     auto *shm_data = shm->get_addr<char *>();
 
+    const int INVERT_MASK = args["invert"].as<bool>() ? ~0 : 0;
+
     // copy file to shm (and buffer)
     std::size_t remaining = SHM_SIZE;
     std::size_t pos       = 0;
     while (remaining) {
-        const auto C = std::cin.get();
-        if (C == EOF) break;
+        auto c = std::cin.get();
+        if (c == EOF) break;
 
-        shm_data[pos] = static_cast<char>(C);
-        if (REPEAT_INPUT) { in_buffer[pos] = static_cast<char>(C); }
+        c ^= INVERT_MASK;
+
+        shm_data[pos] = static_cast<char>(c);
+        if (PASSTHROUGH) {
+            std::cout.put(static_cast<char>(c));
+            std::cout.flush();
+        }
+        if (REPEAT_INPUT) { in_buffer[pos] = static_cast<char>(c); }
 
         pos++;
         remaining--;
@@ -105,6 +118,10 @@ int main(int argc, char **argv) {
             const auto COPY_SIZE = std::min(BUF_SIZE, remaining);
 
             memcpy(shm_data + pos, in_buffer.get(), COPY_SIZE);
+            if (PASSTHROUGH) {
+                std::cout.write(in_buffer.get(), static_cast<std::streamsize>(COPY_SIZE));
+                std::cout.flush();
+            }
 
             pos += COPY_SIZE;
             remaining -= COPY_SIZE;

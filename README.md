@@ -18,9 +18,11 @@ As an alternative to the ```git submodule``` commands, the ```--recursive``` opt
 ```
 write_shm [OPTION...]
 
-  -n, --name arg  shared memory name (mandatory)
-  -r, --repeat    repeat input if input size is smaller than shared memory
-  -h, --help      print usage
+  -n, --name arg     shared memory name (mandatory)
+  -i, --invert       invert all input bits
+  -r, --repeat       repeat input if input size is smaller than shared memory
+  -p, --passthrough  output everything that is written to the shared memory to stdout
+  -h, --help         print usage
 ```
 
 ## Libraries
