@@ -8,7 +8,7 @@ git submodule init
 git submodule update
 mkdir build
 cd build
-cmake .. -DCMAKE_CXX_COMPILER=$(which clang++) -DCMAKE_BUILD_TYPE=Release -DCLANG_FORMAT=OFF -COMPILER_WARNINGS=OFF
+cmake .. -DCMAKE_CXX_COMPILER=$(which clang++) -DCMAKE_BUILD_TYPE=Release -DCLANG_FORMAT=OFF -DCOMPILER_WARNINGS=OFF
 cmake --build .
 ```
 
