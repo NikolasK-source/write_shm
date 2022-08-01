@@ -143,7 +143,7 @@ function(clangwarn)
     target_compile_options(${Target} PUBLIC -Wno-nested-anon-types)
     target_compile_options(${Target} PUBLIC -Wno-gnu-anonymous-struct)
     target_compile_options(${Target} PUBLIC -Wno-reserved-id-macro)
-
+    target_compile_options(${Target} PUBLIC -Wno-deprecated-copy-with-dtor)
 endfunction()
 
 if(COMPILER_WARNINGS)
