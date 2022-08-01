@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
                           "output everything that is written to the shared memory to stdout",
                           cxxopts::value<bool>()->default_value("false"));
     options.add_options()("h,help", "print usage");
+    options.add_options()("version", "print version information");
 
     // parse arguments
     cxxopts::ParseResult args;
@@ -68,6 +69,11 @@ int main(int argc, char **argv) {
         exit(EX_OK);
     }
 
+    // print version
+    if (args.count("version")) {
+        std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << std::endl;
+        exit(EX_OK);
+    }
 
     // open shm
     std::unique_ptr<SHM> shm;
