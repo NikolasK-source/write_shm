@@ -1,4 +1,4 @@
-id: network.koesling.write-shm
+id: network.koesling.test-write-shm
 runtime: org.freedesktop.Platform
 runtime-version: '21.08'
 sdk: org.freedesktop.Sdk
@@ -18,7 +18,5 @@ modules:
     - mkdir -p "${FLATPAK_DEST}/bin"
     - cp build/write-shm ${FLATPAK_DEST}/bin
     sources:
-      - type: git
-        branch: release
-        url: https://github.com/NikolasK-source/write_shm.git
-
+      - type: dir
+        path: .
