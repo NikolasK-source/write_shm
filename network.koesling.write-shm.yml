@@ -2,11 +2,11 @@ id: network.koesling.write-shm
 runtime: org.freedesktop.Platform
 runtime-version: '21.08'
 sdk: org.freedesktop.Sdk
-command: write_shm
+command: write-shm
 finish-args:
   - --device=shm
 modules:
-  - name: write_shm
+  - name: write-shm
     buildsystem: simple
     build-commands:
     # build
@@ -16,8 +16,7 @@ modules:
 
     # install
     - mkdir -p "${FLATPAK_DEST}/bin"
-    - cp build/write_shm ${FLATPAK_DEST}/bin
-    - ls -lah ${FLATPAK_DEST}
+    - cp build/write-shm ${FLATPAK_DEST}/bin
     sources:
       - type: git
         branch: release
