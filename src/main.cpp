@@ -6,6 +6,7 @@
 #include "license.hpp"
 
 #include <cxxopts.hpp>
+#include <cxxsemaphore.hpp>
 #include <cxxshm.hpp>
 #include <filesystem>
 #include <iostream>
@@ -84,6 +85,16 @@ int main(int argc, char **argv) {
         exit(EX_SOFTWARE);
     }
 
+    std::unique_ptr<cxxsemaphore::Semaphore> semaphore;
+    if (args.count("semaphore")) {
+        try {
+            semaphore = std::make_unique<cxxsemaphore::Semaphore>(args["semaphore"].as<std::string>());
+        } catch (std::exception &e) {
+            std::cerr << e.what() << std::endl;
+            return EX_SOFTWARE;
+        }
+    }
+
     const auto SHM_SIZE = shm->get_size();
 
     // allocate input buffer (if required for repeat option)
@@ -93,6 +104,8 @@ int main(int argc, char **argv) {
     auto *shm_data = shm->get_addr<char *>();
 
     const int INVERT_MASK = args["invert"].as<bool>() ? ~0 : 0;
+
+    if (semaphore) semaphore->wait();
 
     // copy file to shm (and buffer)
     std::size_t remaining = SHM_SIZE;
@@ -130,4 +143,6 @@ int main(int argc, char **argv) {
             remaining -= COPY_SIZE;
         }
     }
+
+    if (semaphore) semaphore->post();
 }
