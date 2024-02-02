@@ -45,7 +45,19 @@ write-shm -n mem < file
 write-shm -n mem -r < file
 ```
 
-## Using the Flatpak package
+## Install
+
+### Using the Arch User Repository (recommended for Arch based Linux distributions)
+The application is available as [write-shm](https://aur.archlinux.org/packages/write-shm) in the [Arch User Repository](https://aur.archlinux.org/).
+See the [Arch Wiki](https://wiki.archlinux.org/title/Arch_User_Repository) for information about how to install AUR packages.
+
+
+### Using the Modbus Collection Flatpak Package: Shared Memory Modbus
+[SHM-Modbus](https://nikolask-source.github.io/SHM_Modbus/) is a collection of the shared memory modbus tools.
+It is available as flatpak and published on flathub as ```network.koesling.shm-modbs```.
+
+
+### Using the Standalone Flatpak package
 The flatpak package can be installed via the .flatpak file.
 This can be downloaded from the GitHub [projects release page](https://github.com/NikolasK-source/write_shm/releases):
 
@@ -62,7 +74,7 @@ To enable calling with ```write-shm``` [this script](https://gist.github.com/Nik
 In order to be executable everywhere, the path in which the script is placed must be in the ```PATH``` environment variable.
 
 
-## Build from Source
+### Build from Source
 
 The following packages are required for building the application:
 - cmake

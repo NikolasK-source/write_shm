@@ -3,10 +3,11 @@
  * This program is free software. You can redistribute it and/or modify it under the terms of the MIT License.
  */
 
-#include "SHM.hpp"
 #include "license.hpp"
 
 #include <cxxopts.hpp>
+#include <cxxsemaphore.hpp>
+#include <cxxshm.hpp>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -29,6 +30,9 @@ int main(int argc, char **argv) {
     options.add_options()("p,passthrough",
                           "output everything that is written to the shared memory to stdout",
                           cxxopts::value<bool>()->default_value("false"));
+    options.add_options()("s,semaphore",
+                          "protect the shared memory with an existing named semaphore against simultaneous access",
+                          cxxopts::value<std::string>());
     options.add_options()("h,help", "print usage");
     options.add_options()("version", "print version information");
     options.add_options()("license", "show licenses");
@@ -67,15 +71,28 @@ int main(int argc, char **argv) {
     }
 
     // open shm
-    std::unique_ptr<SHM> shm;
+    std::unique_ptr<cxxshm::SharedMemory> shm;
     try {
-        shm = std::make_unique<SHM>(args["name"].as<std::string>());
+        shm = std::make_unique<cxxshm::SharedMemory>(args["name"].as<std::string>());
     } catch (const std::system_error &e) {
         std::cerr << e.what() << std::endl;
         exit(EX_OSERR);
     } catch (const cxxopts::option_has_no_value_exception &) {
         std::cerr << "Specifying an shared memory name is mandatory." << std::endl;
         exit_usage();
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << std::endl;
+        exit(EX_SOFTWARE);
+    }
+
+    std::unique_ptr<cxxsemaphore::Semaphore> semaphore;
+    if (args.count("semaphore")) {
+        try {
+            semaphore = std::make_unique<cxxsemaphore::Semaphore>(args["semaphore"].as<std::string>());
+        } catch (std::exception &e) {
+            std::cerr << e.what() << std::endl;
+            return EX_SOFTWARE;
+        }
     }
 
     const auto SHM_SIZE = shm->get_size();
@@ -87,6 +104,8 @@ int main(int argc, char **argv) {
     auto *shm_data = shm->get_addr<char *>();
 
     const int INVERT_MASK = args["invert"].as<bool>() ? ~0 : 0;
+
+    if (semaphore) semaphore->wait();
 
     // copy file to shm (and buffer)
     std::size_t remaining = SHM_SIZE;
@@ -124,4 +143,6 @@ int main(int argc, char **argv) {
             remaining -= COPY_SIZE;
         }
     }
+
+    if (semaphore) semaphore->post();
 }
