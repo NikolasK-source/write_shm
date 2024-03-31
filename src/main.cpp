@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     cxxopts::ParseResult args;
     try {
         args = options.parse(argc, argv);
-    } catch (cxxopts::OptionParseException &e) {
+    } catch (cxxopts::exceptions::parsing::exception &e) {
         std::cerr << "Failed to parse arguments: " << e.what() << '.' << std::endl;
         exit_usage();
     }
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     } catch (const std::system_error &e) {
         std::cerr << e.what() << std::endl;
         exit(EX_OSERR);
-    } catch (const cxxopts::option_has_no_value_exception &) {
+    } catch (const cxxopts::exceptions::option_has_no_value::exception &) {
         std::cerr << "Specifying an shared memory name is mandatory." << std::endl;
         exit_usage();
     } catch (const std::exception &e) {
