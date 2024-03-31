@@ -11,4 +11,4 @@ const std::string write_shm_version_info::VERSION_STR(PROJECT_VERSION);
 const std::string write_shm_version_info::NAME(PROJECT_NAME);
 const std::string write_shm_version_info::COMPILER(COMPILER_INFO);
 const std::string write_shm_version_info::SYSTEM(SYSTEM_INFO);
-const std::string write_shm_version_info::GIT_HASH("90f7ba68677f40be4110373c59f9bcd3da54da9a-dirty");
+const std::string write_shm_version_info::GIT_HASH("1483d41f13e8712a8c5e7c5e5680453ed069c43c-dirty");

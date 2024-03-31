@@ -14,11 +14,11 @@
 #include <sysexits.h>
 
 int main(int argc, char **argv) {
-    const std::string exe_name = std::filesystem::path(argv[0]).filename().string();
+    const std::string exe_name = std::filesystem::path(*argv).filename().string();
     cxxopts::Options  options(exe_name, "Writes the content of stdin to a named shared memory.");
 
     auto exit_usage = [&exe_name]() {
-        std::cerr << "Use '" << exe_name << " --help' for more information." << std::endl;
+        std::cerr << "Use '" << exe_name << " --help' for more information." << '\n';
         exit(EX_USAGE);
     };
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     try {
         args = options.parse(argc, argv);
     } catch (cxxopts::exceptions::parsing::exception &e) {
-        std::cerr << "Failed to parse arguments: " << e.what() << '.' << std::endl;
+        std::cerr << "Failed to parse arguments: " << e.what() << '.' << '\n';
         exit_usage();
     }
 
@@ -51,16 +51,16 @@ int main(int argc, char **argv) {
 
     // print usage
     if (args.count("help")) {
-        std::cout << options.help() << std::endl;
-        std::cout << "This application uses the following libraries:" << std::endl;
-        std::cout << "  - cxxopts by jarro2783 (https://github.com/jarro2783/cxxopts)" << std::endl;
+        std::cout << options.help() << '\n';
+        std::cout << "This application uses the following libraries:" << '\n';
+        std::cout << "  - cxxopts by jarro2783 (https://github.com/jarro2783/cxxopts)" << '\n';
         exit(EX_OK);
     }
 
     // print version
     if (args.count("version")) {
         std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << " (compiled with " << COMPILER_INFO << " on "
-                  << SYSTEM_INFO << ')' << std::endl;
+                  << SYSTEM_INFO << ')' << '\n';
         return EX_OK;
     }
 
@@ -75,13 +75,13 @@ int main(int argc, char **argv) {
     try {
         shm = std::make_unique<cxxshm::SharedMemory>(args["name"].as<std::string>());
     } catch (const std::system_error &e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << '\n';
         exit(EX_OSERR);
     } catch (const cxxopts::exceptions::option_has_no_value::exception &) {
-        std::cerr << "Specifying an shared memory name is mandatory." << std::endl;
+        std::cerr << "Specifying an shared memory name is mandatory." << '\n';
         exit_usage();
     } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << '\n';
         exit(EX_SOFTWARE);
     }
 
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
         try {
             semaphore = std::make_unique<cxxsemaphore::Semaphore>(args["semaphore"].as<std::string>());
         } catch (std::exception &e) {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.what() << '\n';
             return EX_SOFTWARE;
         }
     }
@@ -98,8 +98,8 @@ int main(int argc, char **argv) {
     const auto SHM_SIZE = shm->get_size();
 
     // allocate input buffer (if required for repeat option)
-    std::unique_ptr<char[]> in_buffer;
-    if (REPEAT_INPUT) { in_buffer = std::make_unique<char[]>(SHM_SIZE); }
+    std::vector<char> in_buffer;
+    if (REPEAT_INPUT) in_buffer = std::vector<char>(SHM_SIZE);
 
     auto *shm_data = shm->get_addr<char *>();
 
@@ -116,12 +116,12 @@ int main(int argc, char **argv) {
 
         c ^= INVERT_MASK;
 
-        shm_data[pos] = static_cast<char>(c);
+        shm_data[pos] = static_cast<char>(c);  // NOLINT
         if (PASSTHROUGH) {
             std::cout.put(static_cast<char>(c));
             std::cout.flush();
         }
-        if (REPEAT_INPUT) { in_buffer[pos] = static_cast<char>(c); }
+        if (REPEAT_INPUT) in_buffer[pos] = static_cast<char>(c);
 
         pos++;
         remaining--;
@@ -133,9 +133,9 @@ int main(int argc, char **argv) {
         while (remaining) {
             const auto COPY_SIZE = std::min(BUF_SIZE, remaining);
 
-            memcpy(shm_data + pos, in_buffer.get(), COPY_SIZE);
+            memcpy(shm_data + pos, in_buffer.data(), COPY_SIZE);  // NOLINT
             if (PASSTHROUGH) {
-                std::cout.write(in_buffer.get(), static_cast<std::streamsize>(COPY_SIZE));
+                std::cout.write(in_buffer.data(), static_cast<std::streamsize>(COPY_SIZE));
                 std::cout.flush();
             }
 
