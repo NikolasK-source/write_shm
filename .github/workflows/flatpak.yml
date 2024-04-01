@@ -16,6 +16,6 @@ jobs:
     - uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v4
       name: "Build"
       with:
-        bundle: test_dump-shm.flatpak
-        manifest-path: network.koesling.test-dump-shm.yml
+        bundle: test_write-shm.flatpak
+        manifest-path: network.koesling.test-write-shm.yml
         cache-key: flatpak-builder-${{ github.sha }}
