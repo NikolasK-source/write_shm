@@ -3,6 +3,7 @@
  * This program is free software. You can redistribute it and/or modify it under the terms of the MIT License.
  */
 
+#include "generated/version_info.hpp"
 #include "license.hpp"
 
 #include <cxxopts.hpp>
@@ -13,6 +14,9 @@
 #include <memory>
 #include <sysexits.h>
 
+//! Help output line width
+static constexpr std::size_t HELP_WIDTH = 120;
+
 int main(int argc, char **argv) {
     const std::string exe_name = std::filesystem::path(*argv).filename().string();
     cxxopts::Options  options(exe_name, "Writes the content of stdin to a named shared memory.");
@@ -22,20 +26,26 @@ int main(int argc, char **argv) {
         exit(EX_USAGE);
     };
 
-    options.add_options()("n,name", "shared memory name (mandatory)", cxxopts::value<std::string>());
-    options.add_options()("i,invert", "invert all input bits", cxxopts::value<bool>()->default_value("false"));
-    options.add_options()("r,repeat",
-                          "repeat input if input size is smaller than shared memory",
-                          cxxopts::value<bool>()->default_value("false"));
-    options.add_options()("p,passthrough",
-                          "output everything that is written to the shared memory to stdout",
-                          cxxopts::value<bool>()->default_value("false"));
-    options.add_options()("s,semaphore",
-                          "protect the shared memory with an existing named semaphore against simultaneous access",
-                          cxxopts::value<std::string>());
-    options.add_options()("h,help", "print usage");
-    options.add_options()("version", "print version information");
-    options.add_options()("license", "show licenses");
+    options.add_options("shared memory")("n,name", "shared memory name (mandatory)", cxxopts::value<std::string>());
+    options.add_options("settings")(
+            "i,invert", "invert all input bits", cxxopts::value<bool>()->default_value("false"));
+    options.add_options("settings")("r,repeat",
+                                    "repeat input if input size is smaller than shared memory",
+                                    cxxopts::value<bool>()->default_value("false"));
+    options.add_options("settings")("p,passthrough",
+                                    "output everything that is written to the shared memory to stdout",
+                                    cxxopts::value<bool>()->default_value("false"));
+    options.add_options("shared memory")(
+            "s,semaphore",
+            "protect the shared memory with an existing named semaphore against simultaneous access",
+            cxxopts::value<std::string>());
+    options.add_options("other")("h,help", "print usage");
+    options.add_options("version information")("version", "print version and exit");
+    options.add_options("version information")("longversion",
+                                               "print version (including compiler and system info) and exit");
+    options.add_options("version information")("shortversion", "print version (only version string) and exit");
+    options.add_options("version information")("git-hash", "print git hash");
+    options.add_options("other")("license", "show licences");
 
     // parse arguments
     cxxopts::ParseResult args;
@@ -51,6 +61,7 @@ int main(int argc, char **argv) {
 
     // print usage
     if (args.count("help")) {
+        options.set_width(HELP_WIDTH);
         std::cout << options.help() << '\n';
         std::cout << "This application uses the following libraries:" << '\n';
         std::cout << "  - cxxopts by jarro2783 (https://github.com/jarro2783/cxxopts)" << '\n';
@@ -58,9 +69,40 @@ int main(int argc, char **argv) {
     }
 
     // print version
-    if (args.count("version")) {
+    if (args.count("longversion")) {
         std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << " (compiled with " << COMPILER_INFO << " on "
-                  << SYSTEM_INFO << ')' << '\n';
+                  << SYSTEM_INFO << ')'
+#ifndef OS_LINUX
+                  << "-nonlinux"
+#endif
+                  << '\n';
+        return EX_OK;
+    }
+
+    if (args.count("shortversion")) {
+        std::cout << PROJECT_VERSION << '\n';
+        return EX_OK;
+    }
+
+    if (args.count("version")) {
+        std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << '\n';
+        return EX_OK;
+    }
+
+    if (args.count("longversion")) {
+        std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << '\n';
+        std::cout << "   compiled with " << COMPILER_INFO << '\n';
+        std::cout << "   on system " << SYSTEM_INFO
+#ifndef OS_LINUX
+                  << "-nonlinux"
+#endif
+                  << '\n';
+        std::cout << "   from git commit " << RCS_HASH << '\n';
+        return EX_OK;
+    }
+
+    if (args.count("git-hash")) {
+        std::cout << RCS_HASH << '\n';
         return EX_OK;
     }
 
