@@ -3,6 +3,7 @@
  * This program is free software. You can redistribute it and/or modify it under the terms of the MIT License.
  */
 
+#include "generated/version_info.hpp"
 #include "license.hpp"
 
 #include <cxxopts.hpp>
@@ -13,36 +14,45 @@
 #include <memory>
 #include <sysexits.h>
 
+//! Help output line width
+static constexpr std::size_t HELP_WIDTH = 120;
+
 int main(int argc, char **argv) {
-    const std::string exe_name = std::filesystem::path(argv[0]).filename().string();
+    const std::string exe_name = std::filesystem::path(*argv).filename().string();
     cxxopts::Options  options(exe_name, "Writes the content of stdin to a named shared memory.");
 
     auto exit_usage = [&exe_name]() {
-        std::cerr << "Use '" << exe_name << " --help' for more information." << std::endl;
+        std::cerr << "Use '" << exe_name << " --help' for more information." << '\n';
         exit(EX_USAGE);
     };
 
-    options.add_options()("n,name", "shared memory name (mandatory)", cxxopts::value<std::string>());
-    options.add_options()("i,invert", "invert all input bits", cxxopts::value<bool>()->default_value("false"));
-    options.add_options()("r,repeat",
-                          "repeat input if input size is smaller than shared memory",
-                          cxxopts::value<bool>()->default_value("false"));
-    options.add_options()("p,passthrough",
-                          "output everything that is written to the shared memory to stdout",
-                          cxxopts::value<bool>()->default_value("false"));
-    options.add_options()("s,semaphore",
-                          "protect the shared memory with an existing named semaphore against simultaneous access",
-                          cxxopts::value<std::string>());
-    options.add_options()("h,help", "print usage");
-    options.add_options()("version", "print version information");
-    options.add_options()("license", "show licenses");
+    options.add_options("shared memory")("n,name", "shared memory name (mandatory)", cxxopts::value<std::string>());
+    options.add_options("settings")(
+            "i,invert", "invert all input bits", cxxopts::value<bool>()->default_value("false"));
+    options.add_options("settings")("r,repeat",
+                                    "repeat input if input size is smaller than shared memory",
+                                    cxxopts::value<bool>()->default_value("false"));
+    options.add_options("settings")("p,passthrough",
+                                    "output everything that is written to the shared memory to stdout",
+                                    cxxopts::value<bool>()->default_value("false"));
+    options.add_options("shared memory")(
+            "s,semaphore",
+            "protect the shared memory with an existing named semaphore against simultaneous access",
+            cxxopts::value<std::string>());
+    options.add_options("other")("h,help", "print usage");
+    options.add_options("version information")("version", "print version and exit");
+    options.add_options("version information")("longversion",
+                                               "print version (including compiler and system info) and exit");
+    options.add_options("version information")("shortversion", "print version (only version string) and exit");
+    options.add_options("version information")("git-hash", "print git hash");
+    options.add_options("other")("license", "show licences");
 
     // parse arguments
     cxxopts::ParseResult args;
     try {
         args = options.parse(argc, argv);
-    } catch (cxxopts::OptionParseException &e) {
-        std::cerr << "Failed to parse arguments: " << e.what() << '.' << std::endl;
+    } catch (cxxopts::exceptions::parsing::exception &e) {
+        std::cerr << "Failed to parse arguments: " << e.what() << '.' << '\n';
         exit_usage();
     }
 
@@ -51,16 +61,48 @@ int main(int argc, char **argv) {
 
     // print usage
     if (args.count("help")) {
-        std::cout << options.help() << std::endl;
-        std::cout << "This application uses the following libraries:" << std::endl;
-        std::cout << "  - cxxopts by jarro2783 (https://github.com/jarro2783/cxxopts)" << std::endl;
+        options.set_width(HELP_WIDTH);
+        std::cout << options.help() << '\n';
+        std::cout << "This application uses the following libraries:" << '\n';
+        std::cout << "  - cxxopts by jarro2783 (https://github.com/jarro2783/cxxopts)" << '\n';
         exit(EX_OK);
     }
 
     // print version
-    if (args.count("version")) {
+    if (args.count("longversion")) {
         std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << " (compiled with " << COMPILER_INFO << " on "
-                  << SYSTEM_INFO << ')' << std::endl;
+                  << SYSTEM_INFO << ')'
+#ifndef OS_LINUX
+                  << "-nonlinux"
+#endif
+                  << '\n';
+        return EX_OK;
+    }
+
+    if (args.count("shortversion")) {
+        std::cout << PROJECT_VERSION << '\n';
+        return EX_OK;
+    }
+
+    if (args.count("version")) {
+        std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << '\n';
+        return EX_OK;
+    }
+
+    if (args.count("longversion")) {
+        std::cout << PROJECT_NAME << ' ' << PROJECT_VERSION << '\n';
+        std::cout << "   compiled with " << COMPILER_INFO << '\n';
+        std::cout << "   on system " << SYSTEM_INFO
+#ifndef OS_LINUX
+                  << "-nonlinux"
+#endif
+                  << '\n';
+        std::cout << "   from git commit " << RCS_HASH << '\n';
+        return EX_OK;
+    }
+
+    if (args.count("git-hash")) {
+        std::cout << RCS_HASH << '\n';
         return EX_OK;
     }
 
@@ -75,13 +117,13 @@ int main(int argc, char **argv) {
     try {
         shm = std::make_unique<cxxshm::SharedMemory>(args["name"].as<std::string>());
     } catch (const std::system_error &e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << '\n';
         exit(EX_OSERR);
-    } catch (const cxxopts::option_has_no_value_exception &) {
-        std::cerr << "Specifying an shared memory name is mandatory." << std::endl;
+    } catch (const cxxopts::exceptions::option_has_no_value::exception &) {
+        std::cerr << "Specifying an shared memory name is mandatory." << '\n';
         exit_usage();
     } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << '\n';
         exit(EX_SOFTWARE);
     }
 
@@ -90,7 +132,7 @@ int main(int argc, char **argv) {
         try {
             semaphore = std::make_unique<cxxsemaphore::Semaphore>(args["semaphore"].as<std::string>());
         } catch (std::exception &e) {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.what() << '\n';
             return EX_SOFTWARE;
         }
     }
@@ -98,8 +140,8 @@ int main(int argc, char **argv) {
     const auto SHM_SIZE = shm->get_size();
 
     // allocate input buffer (if required for repeat option)
-    std::unique_ptr<char[]> in_buffer;
-    if (REPEAT_INPUT) { in_buffer = std::make_unique<char[]>(SHM_SIZE); }
+    std::vector<char> in_buffer;
+    if (REPEAT_INPUT) in_buffer = std::vector<char>(SHM_SIZE);
 
     auto *shm_data = shm->get_addr<char *>();
 
@@ -116,12 +158,12 @@ int main(int argc, char **argv) {
 
         c ^= INVERT_MASK;
 
-        shm_data[pos] = static_cast<char>(c);
+        shm_data[pos] = static_cast<char>(c);  // NOLINT
         if (PASSTHROUGH) {
             std::cout.put(static_cast<char>(c));
             std::cout.flush();
         }
-        if (REPEAT_INPUT) { in_buffer[pos] = static_cast<char>(c); }
+        if (REPEAT_INPUT) in_buffer[pos] = static_cast<char>(c);
 
         pos++;
         remaining--;
@@ -133,9 +175,9 @@ int main(int argc, char **argv) {
         while (remaining) {
             const auto COPY_SIZE = std::min(BUF_SIZE, remaining);
 
-            memcpy(shm_data + pos, in_buffer.get(), COPY_SIZE);
+            memcpy(shm_data + pos, in_buffer.data(), COPY_SIZE);  // NOLINT
             if (PASSTHROUGH) {
-                std::cout.write(in_buffer.get(), static_cast<std::streamsize>(COPY_SIZE));
+                std::cout.write(in_buffer.data(), static_cast<std::streamsize>(COPY_SIZE));
                 std::cout.flush();
             }
 
