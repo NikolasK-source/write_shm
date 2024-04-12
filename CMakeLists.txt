@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.22.0 FATAL_ERROR)
 # ======================================================================================================================
 
 # project
-project(write-shm LANGUAGES CXX VERSION 1.1.0)
+project(write-shm LANGUAGES CXX VERSION 1.1.1)
 
 # settings
 set(Target "write-shm")    # Executable name (without file extension!)
